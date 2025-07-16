@@ -66,7 +66,8 @@ class ChessGUI:
                     self.promote_pawn(move)
                 elif self.engine.make_move(move):
                     self.draw_board()
-                    self.root.after(100, self.agent_move)
+                    if not self.check_game_over():
+                        self.root.after(100, self.agent_move)
                 else:
                     self.draw_board() # Redraw to clear highlights
                 self.selected_square = None
@@ -89,6 +90,7 @@ class ChessGUI:
             move = self.engine.get_board().parse_san(move_san)
             self.engine.make_move(move)
             self.draw_board()
+            self.check_game_over()
 
     def get_models(self):
         import os
@@ -99,6 +101,30 @@ class ChessGUI:
         model_name = self.model_var.get()
         if model_name != "No models found":
             self.agent.load_q_table(model_name)
+
+    def check_game_over(self):
+        if self.engine.get_board().is_game_over():
+            result = self.engine.get_board().result()
+            if result == "1-0":
+                message = "White wins!"
+            elif result == "0-1":
+                message = "Black wins!"
+            else:
+                message = "Draw!"
+
+            self.show_message(message)
+            self.engine.get_board().reset()
+            self.draw_board()
+            return True
+        return False
+
+    def show_message(self, message):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Game Over")
+        tk.Label(dialog, text=message).pack()
+        ok_button = tk.Button(dialog, text="OK", command=dialog.destroy)
+        ok_button.pack()
+        self.root.wait_window(dialog)
 
     def promote_pawn(self, move):
         promotion_piece = self.ask_promotion_piece()
