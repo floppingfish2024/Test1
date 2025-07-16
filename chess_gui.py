@@ -6,6 +6,10 @@ from learning import LearningAgent
 class ChessGUI:
     def __init__(self, root):
         self.root = root
+        self.engine = ChessEngine()
+        self.agent = LearningAgent()
+        self.agent.load_q_table("q_table.pkl")
+        self.selected_square = None
         if self.root:
             self.root.title("Chess")
             self.canvas = tk.Canvas(self.root, width=400, height=400)
@@ -14,10 +18,6 @@ class ChessGUI:
             self.canvas.bind("<Button-1>", self.on_square_clicked)
             self.train_button = tk.Button(self.root, text="Train Bot", command=self.train_bot)
             self.train_button.pack()
-        self.engine = ChessEngine()
-        self.agent = LearningAgent()
-        self.agent.load_q_table("q_table.pkl")
-        self.selected_square = None
 
     def draw_board(self):
         self.canvas.delete("all")
