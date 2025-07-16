@@ -5,6 +5,7 @@ import pickle
 class LearningAgent:
     def __init__(self, alpha=0.1, gamma=0.9, epsilon=0.1):
         self.q_table = {}
+        self.games_played = 0
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
@@ -39,11 +40,16 @@ class LearningAgent:
 
     def save_q_table(self, filename="q_table.pkl"):
         with open(filename, "wb") as f:
-            pickle.dump(self.q_table, f)
+            pickle.dump({"q_table": self.q_table, "games_played": self.games_played}, f)
 
     def load_q_table(self, filename="q_table.pkl"):
         try:
             with open(filename, "rb") as f:
-                self.q_table = pickle.load(f)
+                data = pickle.load(f)
+                if "q_table" in data:
+                    self.q_table = data["q_table"]
+                if "games_played" in data:
+                    self.games_played = data["games_played"]
         except FileNotFoundError:
-            pass
+            self.q_table = {}
+            self.games_played = 0
