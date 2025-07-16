@@ -37,11 +37,11 @@ class LearningAgent:
         new_q = old_q + self.alpha * (reward + self.gamma * next_q - old_q)
         self.q_table[(state, action)] = new_q
 
-    def save_q_table(self, filename):
+    def save_q_table(self, filename="q_table.pkl"):
         with open(filename, "wb") as f:
             pickle.dump(self.q_table, f)
 
-    def load_q_table(self, filename):
+    def load_q_table(self, filename="q_table.pkl"):
         try:
             with open(filename, "rb") as f:
                 self.q_table = pickle.load(f)

@@ -84,22 +84,32 @@ def train_bot(agent, num_games=1000):
     for result in results:
         for state, action, reward, next_state in result:
             agent.learn(state, action, reward, next_state)
-    agent.save_q_table("q_table.pkl")
+    agent.save_q_table(f"q_table_{num_games}_games.pkl")
     print("Training complete.")
 
 
 if __name__ == "__main__":
     import argparse
+    import os
+    import re
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--games", type=int, default=1000)
     args = parser.parse_args()
 
     if args.train:
+        import sys
         agent = LearningAgent()
-        agent.load_q_table("q_table.pkl")
+        agent.load_q_table()
         train_bot(agent, args.games)
+        sys.exit()
     else:
+        agent = LearningAgent()
+        files = [f for f in os.listdir('.') if os.path.isfile(f) and f.startswith("q_table_")]
+        if files:
+            latest_file = max(files, key=lambda f: int(re.search(r'\d+', f).group()))
+            agent.load_q_table(latest_file)
         root = tk.Tk()
         gui = ChessGUI(root)
+        gui.agent = agent
         root.mainloop()
