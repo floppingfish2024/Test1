@@ -182,11 +182,24 @@ def play_game(game_num, agent):
         else:
             action = agent.choose_action(board)
 
+        move = board.parse_san(action)
+        captured_piece = board.piece_at(move.to_square)
         board.push_san(action)
         next_state = board.fen()
         reward = 0
+        if captured_piece:
+            if captured_piece.piece_type == chess.PAWN:
+                reward = 1
+            elif captured_piece.piece_type == chess.KNIGHT:
+                reward = 3
+            elif captured_piece.piece_type == chess.BISHOP:
+                reward = 3
+            elif captured_piece.piece_type == chess.ROOK:
+                reward = 5
+            elif captured_piece.piece_type == chess.QUEEN:
+                reward = 9
         if board.is_checkmate():
-            reward = 1 if board.turn == chess.BLACK else -1
+            reward = 100 if board.turn == chess.BLACK else -100
         elif board.is_stalemate() or board.is_insufficient_material():
             reward = 0
         history.append((state, action, reward, board.copy()))
@@ -233,6 +246,8 @@ def train_bot(agent, num_games=1000):
     q_values = [v for k, v in agent.q_table.items()]
     if q_values:
         print(f"Average Q-value: {np.mean(q_values):.4f}")
+    else:
+        print("Q-table is empty, no Q-values to average.")
 
 
 if __name__ == "__main__":
