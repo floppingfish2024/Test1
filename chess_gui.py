@@ -90,6 +90,8 @@ class ChessGUI:
         if not self.engine.get_board().is_game_over():
             move_san = self.agent.choose_action(self.engine.get_board())
             move = self.engine.get_board().parse_san(move_san)
+            if self.engine.get_board().piece_at(move.from_square).piece_type == chess.PAWN and chess.square_rank(move.to_square) == 0:
+                move.promotion = chess.QUEEN
             self.engine.make_move(move)
             self.draw_board()
             self.check_game_over()
