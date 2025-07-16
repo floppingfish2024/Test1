@@ -87,14 +87,22 @@ class ChessGUI:
                 self.canvas.create_rectangle(x1, y1, x2, y2, outline="green", width=2)
 
     def agent_move(self):
+        import logging
+        logging.basicConfig(level=logging.INFO)
         if not self.engine.get_board().is_game_over():
+            logging.info("Agent's turn")
             move_san = self.agent.choose_action(self.engine.get_board())
+            logging.info(f"Agent chose move: {move_san}")
             try:
                 move = self.engine.get_board().parse_san(move_san)
+                logging.info(f"Parsed move: {move}")
                 if self.engine.get_board().piece_at(move.from_square) is not None and self.engine.get_board().piece_at(move.from_square).piece_type == chess.PAWN and chess.square_rank(move.to_square) == 0:
                     move.promotion = chess.QUEEN
+                    logging.info("Promoting pawn to Queen")
                 self.engine.make_move(move)
+                logging.info("Move made successfully")
             except ValueError:
+                logging.error(f"Invalid move chosen by agent: {move_san}")
                 # The agent chose an invalid move.
                 # This can happen if the Q-table is not well-trained.
                 # We'll just let the agent try again on the next turn.
@@ -165,7 +173,6 @@ class ChessGUI:
         return piece_var.get()
 
 def play_game(game_num, agent):
-    print(f"Training game {game_num+1}")
     board = chess.Board()
     history = []
     while not board.is_game_over():
@@ -183,20 +190,49 @@ def play_game(game_num, agent):
         elif board.is_stalemate() or board.is_insufficient_material():
             reward = 0
         history.append((state, action, reward, board.copy()))
-    return history
+
+    result = board.result()
+    moves = board.fullmove_number
+    return history, result, moves
 
 def train_bot(agent, num_games=1000):
     import multiprocessing
+    import numpy as np
+
     pool = multiprocessing.Pool()
     results = pool.starmap(play_game, [(i, agent) for i in range(num_games)])
     pool.close()
     pool.join()
-    for result in results:
-        for state, action, reward, next_state in result:
+
+    wins = 0
+    losses = 0
+    draws = 0
+    total_moves = 0
+
+    for history, result, moves in results:
+        for state, action, reward, next_state in history:
             agent.learn(state, action, reward, next_state)
+        if result == "1-0":
+            wins += 1
+        elif result == "0-1":
+            losses += 1
+        else:
+            draws += 1
+        total_moves += moves
+
     agent.games_played += num_games
     agent.save_q_table(f"q_table_{agent.games_played}_games.pkl")
+
     print("Training complete.")
+    print(f"Games played: {num_games}")
+    print(f"Wins: {wins} ({wins/num_games*100:.2f}%)")
+    print(f"Losses: {losses} ({losses/num_games*100:.2f}%)")
+    print(f"Draws: {draws} ({draws/num_games*100:.2f}%)")
+    print(f"Average moves per game: {total_moves/num_games:.2f}")
+
+    q_values = [v for k, v in agent.q_table.items()]
+    if q_values:
+        print(f"Average Q-value: {np.mean(q_values):.4f}")
 
 
 if __name__ == "__main__":
