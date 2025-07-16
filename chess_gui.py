@@ -61,15 +61,17 @@ class ChessGUI:
                 self.selected_square = square
                 self.highlight_legal_moves(square)
             else:
-                move = chess.Move(self.selected_square, square)
-                if self.engine.get_board().piece_at(self.selected_square).piece_type == chess.PAWN and chess.square_rank(square) == 7:
-                    self.promote_pawn(move)
-                elif self.engine.make_move(move):
-                    self.draw_board()
-                    if not self.check_game_over():
-                        self.root.after(100, self.agent_move)
-                else:
-                    self.draw_board() # Redraw to clear highlights
+                piece = self.engine.get_board().piece_at(self.selected_square)
+                if piece is not None:
+                    move = chess.Move(self.selected_square, square)
+                    if piece.piece_type == chess.PAWN and chess.square_rank(square) == 7:
+                        self.promote_pawn(move)
+                    elif self.engine.make_move(move):
+                        self.draw_board()
+                        if not self.check_game_over():
+                            self.root.after(100, self.agent_move)
+                    else:
+                        self.draw_board() # Redraw to clear highlights
                 self.selected_square = None
 
     def highlight_legal_moves(self, square):
