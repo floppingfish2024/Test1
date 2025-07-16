@@ -8,11 +8,10 @@ class ChessEngine:
         return self.board
 
     def make_move(self, move):
-        try:
-            self.board.push_san(move)
+        if move in self.board.legal_moves:
+            self.board.push(move)
             return True
-        except ValueError:
-            return False
+        return False
 
     def get_legal_moves(self):
         return [self.board.san(move) for move in self.board.legal_moves]

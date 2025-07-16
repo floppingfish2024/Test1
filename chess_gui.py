@@ -62,7 +62,7 @@ class ChessGUI:
                 self.highlight_legal_moves(square)
             else:
                 move = chess.Move(self.selected_square, square)
-                if self.engine.make_move(self.engine.get_board().san(move)):
+                if self.engine.make_move(move):
                     self.draw_board()
                     self.root.after(100, self.agent_move)
                 else:
@@ -83,7 +83,8 @@ class ChessGUI:
 
     def agent_move(self):
         if not self.engine.get_board().is_game_over():
-            move = self.agent.choose_action(self.engine.get_board())
+            move_san = self.agent.choose_action(self.engine.get_board())
+            move = self.engine.get_board().parse_san(move_san)
             self.engine.make_move(move)
             self.draw_board()
 
