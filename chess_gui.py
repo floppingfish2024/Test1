@@ -212,17 +212,13 @@ def train_bot(agent, num_games=1000):
     import multiprocessing
     import numpy as np
 
-    pool = multiprocessing.Pool()
-    results = pool.starmap(play_game, [(i, agent) for i in range(num_games)])
-    pool.close()
-    pool.join()
-
     wins = 0
     losses = 0
     draws = 0
     total_moves = 0
 
-    for history, result, moves in results:
+    for i in range(num_games):
+        history, result, moves = play_game(i, agent)
         for state, action, reward, next_state in history:
             agent.learn(state, action, reward, next_state)
         if result == "1-0":
@@ -232,6 +228,9 @@ def train_bot(agent, num_games=1000):
         else:
             draws += 1
         total_moves += moves
+
+        if (i + 1) % 100 == 0:
+            print(f"Games played: {i + 1}/{num_games}")
 
     agent.games_played += num_games
     agent.save_q_table(f"q_table_{agent.games_played}_games.pkl")
