@@ -16,8 +16,6 @@ class ChessGUI:
             self.canvas.pack()
             self.draw_board()
             self.canvas.bind("<Button-1>", self.on_square_clicked)
-            self.train_button = tk.Button(self.root, text="Train Bot", command=self.train_bot)
-            self.train_button.pack()
 
     def draw_board(self):
         self.canvas.delete("all")
@@ -56,38 +54,38 @@ class ChessGUI:
             self.engine.make_move(move)
             self.draw_board()
 
-    def train_bot(self, num_games=1000):
-        import multiprocessing
-        pool = multiprocessing.Pool()
-        results = pool.map(self.play_game, range(num_games))
-        pool.close()
-        pool.join()
-        for result in results:
-            for state, action, reward, next_state in result:
-                self.agent.learn(state, action, reward, next_state)
-        self.agent.save_q_table("q_table.pkl")
-        print("Training complete.")
+def play_game(game_num, agent):
+    print(f"Training game {game_num+1}")
+    board = chess.Board()
+    history = []
+    while not board.is_game_over():
+        state = board.fen()
+        if board.turn == chess.WHITE:
+            action = agent.choose_action(board)
+        else:
+            action = agent.choose_action(board)
 
-    def play_game(self, game_num):
-        print(f"Training game {game_num+1}")
-        board = chess.Board()
-        history = []
-        while not board.is_game_over():
-            state = board.fen()
-            if board.turn == chess.WHITE:
-                action = self.agent.choose_action(board)
-            else:
-                action = self.agent.choose_action(board)
-
-            board.push_san(action)
-            next_state = board.fen()
+        board.push_san(action)
+        next_state = board.fen()
+        reward = 0
+        if board.is_checkmate():
+            reward = 1 if board.turn == chess.BLACK else -1
+        elif board.is_stalemate() or board.is_insufficient_material():
             reward = 0
-            if board.is_checkmate():
-                reward = 1 if board.turn == chess.BLACK else -1
-            elif board.is_stalemate() or board.is_insufficient_material():
-                reward = 0
-            history.append((state, action, reward, board.copy()))
-        return history
+        history.append((state, action, reward, board.copy()))
+    return history
+
+def train_bot(agent, num_games=1000):
+    import multiprocessing
+    pool = multiprocessing.Pool()
+    results = pool.starmap(play_game, [(i, agent) for i in range(num_games)])
+    pool.close()
+    pool.join()
+    for result in results:
+        for state, action, reward, next_state in result:
+            agent.learn(state, action, reward, next_state)
+    agent.save_q_table("q_table.pkl")
+    print("Training complete.")
 
 
 if __name__ == "__main__":
@@ -98,8 +96,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.train:
-        gui = ChessGUI(None)
-        gui.train_bot(args.games)
+        agent = LearningAgent()
+        agent.load_q_table("q_table.pkl")
+        train_bot(agent, args.games)
     else:
         root = tk.Tk()
         gui = ChessGUI(root)
