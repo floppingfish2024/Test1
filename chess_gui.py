@@ -89,10 +89,16 @@ class ChessGUI:
     def agent_move(self):
         if not self.engine.get_board().is_game_over():
             move_san = self.agent.choose_action(self.engine.get_board())
-            move = self.engine.get_board().parse_san(move_san)
-            if self.engine.get_board().piece_at(move.from_square).piece_type == chess.PAWN and chess.square_rank(move.to_square) == 0:
-                move.promotion = chess.QUEEN
-            self.engine.make_move(move)
+            try:
+                move = self.engine.get_board().parse_san(move_san)
+                if self.engine.get_board().piece_at(move.from_square) is not None and self.engine.get_board().piece_at(move.from_square).piece_type == chess.PAWN and chess.square_rank(move.to_square) == 0:
+                    move.promotion = chess.QUEEN
+                self.engine.make_move(move)
+            except ValueError:
+                # The agent chose an invalid move.
+                # This can happen if the Q-table is not well-trained.
+                # We'll just let the agent try again on the next turn.
+                pass
             self.draw_board()
             self.check_game_over()
 
