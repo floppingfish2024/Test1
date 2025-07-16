@@ -183,6 +183,7 @@ def play_game(game_num, agent):
             action = agent.choose_action(board)
 
         move = board.parse_san(action)
+        lost_piece = board.piece_at(move.from_square)
         captured_piece = board.piece_at(move.to_square)
         board.push_san(action)
         next_state = board.fen()
@@ -198,6 +199,18 @@ def play_game(game_num, agent):
                 reward = 5
             elif captured_piece.piece_type == chess.QUEEN:
                 reward = 9
+
+        if board.is_capture(move) and lost_piece:
+             if lost_piece.piece_type == chess.PAWN:
+                reward = -1
+             elif lost_piece.piece_type == chess.KNIGHT:
+                reward = -3
+             elif lost_piece.piece_type == chess.BISHOP:
+                reward = -3
+             elif lost_piece.piece_type == chess.ROOK:
+                reward = -5
+             elif lost_piece.piece_type == chess.QUEEN:
+                reward = -9
         if board.is_checkmate():
             reward = 100 if board.turn == chess.BLACK else -100
         elif board.is_stalemate() or board.is_insufficient_material():
