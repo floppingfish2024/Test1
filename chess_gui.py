@@ -1,5 +1,6 @@
 import tkinter as tk
 import chess
+import random
 from chess_engine import ChessEngine
 from learning import LearningAgent
 
@@ -172,15 +173,15 @@ class ChessGUI:
 
         return piece_var.get()
 
-def play_game(game_num, agent):
+def play_game(game_num, agent1, agent2):
     board = chess.Board()
     history = []
     while not board.is_game_over():
         state = board.fen()
         if board.turn == chess.WHITE:
-            action = agent.choose_action(board)
+            action = agent1.choose_action(board)
         else:
-            action = agent.choose_action(board)
+            action = agent2.choose_action(board)
 
         board.push_san(action)
         next_state = board.fen()
@@ -195,44 +196,9 @@ def play_game(game_num, agent):
     moves = board.fullmove_number
     return history, result, moves
 
-def train_bot(agent, num_games=1000):
-    import multiprocessing
-    import numpy as np
-
-    pool = multiprocessing.Pool()
-    results = pool.starmap(play_game, [(i, agent) for i in range(num_games)])
-    pool.close()
-    pool.join()
-
-    wins = 0
-    losses = 0
-    draws = 0
-    total_moves = 0
-
-    for history, result, moves in results:
-        for state, action, reward, next_state in history:
-            agent.learn(state, action, reward, next_state)
-        if result == "1-0":
-            wins += 1
-        elif result == "0-1":
-            losses += 1
-        else:
-            draws += 1
-        total_moves += moves
-
-    agent.games_played += num_games
-    agent.save_q_table(f"q_table_{agent.games_played}_games.pkl")
-
-    print("Training complete.")
-    print(f"Games played: {num_games}")
-    print(f"Wins: {wins} ({wins/num_games*100:.2f}%)")
-    print(f"Losses: {losses} ({losses/num_games*100:.2f}%)")
-    print(f"Draws: {draws} ({draws/num_games*100:.2f}%)")
-    print(f"Average moves per game: {total_moves/num_games:.2f}")
-
-    q_values = [v for k, v in agent.q_table.items()]
-    if q_values:
-        print(f"Average Q-value: {np.mean(q_values):.4f}")
+def train_bot(agent1, agent2, num_games=1):
+    for i in range(num_games):
+        play_game(i, agent1, agent2)
 
 
 if __name__ == "__main__":
@@ -241,21 +207,21 @@ if __name__ == "__main__":
     import re
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
-    parser.add_argument("--games", type=int, default=1000)
+    parser.add_argument("--games", type=int, default=1)
     args = parser.parse_args()
 
-    agent = LearningAgent()
+    agent1 = LearningAgent()
+    agent2 = LearningAgent()
+
     files = [f for f in os.listdir('.') if os.path.isfile(f) and f.startswith("q_table_")]
     if files:
         latest_file = max(files, key=lambda f: int(re.search(r'\d+', f).group()))
-        agent.load_q_table(latest_file)
+        agent1.load_q_table(latest_file)
+        agent2.load_q_table("q_table_10_games.pkl")
 
-    if args.train:
-        import sys
-        train_bot(agent, args.games)
-        sys.exit()
+        print(f"Agent 1 (White) has {agent1.games_played} games played.")
+        print(f"Agent 2 (Black) has {agent2.games_played} games played.")
+
+        train_bot(agent1, agent2, args.games)
     else:
-        root = tk.Tk()
-        gui = ChessGUI(root)
-        gui.agent = agent
-        root.mainloop()
+        print("No q_table files found. Please train the agents first.")
