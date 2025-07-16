@@ -57,26 +57,37 @@ class ChessGUI:
             self.draw_board()
 
     def train_bot(self, num_games=1000):
-        for i in range(num_games):
-            print(f"Training game {i+1}/{num_games}")
-            board = chess.Board()
-            while not board.is_game_over():
-                state = board.fen()
-                if board.turn == chess.WHITE:
-                    action = self.agent.choose_action(board)
-                else:
-                    action = self.agent.choose_action(board)
-
-                board.push_san(action)
-                next_state = board.fen()
-                reward = 0
-                if board.is_checkmate():
-                    reward = 1 if board.turn == chess.BLACK else -1
-                elif board.is_stalemate() or board.is_insufficient_material():
-                    reward = 0
-                self.agent.learn(state, action, reward, board)
+        import multiprocessing
+        pool = multiprocessing.Pool()
+        results = pool.map(self.play_game, range(num_games))
+        pool.close()
+        pool.join()
+        for result in results:
+            for state, action, reward, next_state in result:
+                self.agent.learn(state, action, reward, next_state)
         self.agent.save_q_table("q_table.pkl")
         print("Training complete.")
+
+    def play_game(self, game_num):
+        print(f"Training game {game_num+1}")
+        board = chess.Board()
+        history = []
+        while not board.is_game_over():
+            state = board.fen()
+            if board.turn == chess.WHITE:
+                action = self.agent.choose_action(board)
+            else:
+                action = self.agent.choose_action(board)
+
+            board.push_san(action)
+            next_state = board.fen()
+            reward = 0
+            if board.is_checkmate():
+                reward = 1 if board.turn == chess.BLACK else -1
+            elif board.is_stalemate() or board.is_insufficient_material():
+                reward = 0
+            history.append((state, action, reward, board.copy()))
+        return history
 
 
 if __name__ == "__main__":
