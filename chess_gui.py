@@ -262,14 +262,57 @@ def train_bot(agent, num_games=1000):
         print("Q-table is empty, no Q-values to average.")
 
 
+def compare_bots(model1_file, model2_file, num_games=100):
+    agent1 = LearningAgent()
+    agent1.load_q_table(model1_file)
+    agent1.epsilon = 0 # No exploration
+    agent2 = LearningAgent()
+    agent2.load_q_table(model2_file)
+    agent2.epsilon = 0 # No exploration
+
+    model1_wins = 0
+    model2_wins = 0
+    draws = 0
+
+    for i in range(num_games):
+        board = chess.Board()
+        while not board.is_game_over():
+            if board.turn == chess.WHITE:
+                action = agent1.choose_action(board)
+            else:
+                action = agent2.choose_action(board)
+            board.push_san(action)
+
+        result = board.result()
+        if result == "1-0":
+            model1_wins += 1
+        elif result == "0-1":
+            model2_wins += 1
+        else:
+            draws += 1
+
+        if (i + 1) % 10 == 0:
+            print(f"Games played: {i + 1}/{num_games}")
+
+    print("Comparison complete.")
+    print(f"Model 1 ({model1_file}) wins: {model1_wins} ({model1_wins/num_games*100:.2f}%)")
+    print(f"Model 2 ({model2_file}) wins: {model2_wins} ({model2_wins/num_games*100:.2f}%)")
+    print(f"Draws: {draws} ({draws/num_games*100:.2f}%)")
+
 if __name__ == "__main__":
     import argparse
     import os
     import re
+    import sys
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--games", type=int, default=1000)
+    parser.add_argument("--compare", nargs=2, help="Compare two models")
     args = parser.parse_args()
+
+    if args.compare:
+        compare_bots(args.compare[0], args.compare[1], args.games)
+        sys.exit()
 
     agent = LearningAgent()
     files = [f for f in os.listdir('.') if os.path.isfile(f) and f.startswith("q_table_")]
