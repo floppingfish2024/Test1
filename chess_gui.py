@@ -62,7 +62,9 @@ class ChessGUI:
                 self.highlight_legal_moves(square)
             else:
                 move = chess.Move(self.selected_square, square)
-                if self.engine.make_move(move):
+                if self.engine.get_board().piece_at(self.selected_square).piece_type == chess.PAWN and chess.square_rank(square) == 7:
+                    self.promote_pawn(move)
+                elif self.engine.make_move(move):
                     self.draw_board()
                     self.root.after(100, self.agent_move)
                 else:
@@ -97,6 +99,34 @@ class ChessGUI:
         model_name = self.model_var.get()
         if model_name != "No models found":
             self.agent.load_q_table(model_name)
+
+    def promote_pawn(self, move):
+        promotion_piece = self.ask_promotion_piece()
+        move.promotion = promotion_piece
+        if self.engine.make_move(move):
+            self.draw_board()
+            self.root.after(100, self.agent_move)
+        else:
+            self.draw_board()
+
+    def ask_promotion_piece(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Pawn Promotion")
+        tk.Label(dialog, text="Promote to:").pack()
+
+        piece_var = tk.IntVar()
+
+        tk.Radiobutton(dialog, text="Queen", variable=piece_var, value=chess.QUEEN).pack()
+        tk.Radiobutton(dialog, text="Rook", variable=piece_var, value=chess.ROOK).pack()
+        tk.Radiobutton(dialog, text="Bishop", variable=piece_var, value=chess.BISHOP).pack()
+        tk.Radiobutton(dialog, text="Knight", variable=piece_var, value=chess.KNIGHT).pack()
+
+        ok_button = tk.Button(dialog, text="OK", command=dialog.destroy)
+        ok_button.pack()
+
+        self.root.wait_window(dialog)
+
+        return piece_var.get()
 
 def play_game(game_num, agent):
     print(f"Training game {game_num+1}")
