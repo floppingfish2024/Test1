@@ -207,7 +207,7 @@ if __name__ == "__main__":
     import re
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
-    parser.add_argument("--games", type=int, default=1)
+    parser.add_argument("--games", type=int, default=100)
     args = parser.parse_args()
 
     agent1 = LearningAgent()
@@ -216,8 +216,9 @@ if __name__ == "__main__":
     files = [f for f in os.listdir('.') if os.path.isfile(f) and f.startswith("q_table_")]
     if files:
         latest_file = max(files, key=lambda f: int(re.search(r'\d+', f).group()))
+        oldest_file = min(files, key=lambda f: int(re.search(r'\d+', f).group()))
         agent1.load_q_table(latest_file)
-        agent2.load_q_table("q_table_10_games.pkl")
+        agent2.load_q_table(oldest_file)
 
         print(f"Agent 1 (White) has {agent1.games_played} games played.")
         print(f"Agent 2 (Black) has {agent2.games_played} games played.")
