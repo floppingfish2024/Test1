@@ -2,6 +2,10 @@ import tkinter as tk
 import chess
 from chess_engine import ChessEngine
 from learning import LearningAgent
+import sys
+import os
+import re
+import numpy as np
 
 class ChessGUI:
     def __init__(self, root):
@@ -111,7 +115,6 @@ class ChessGUI:
             self.check_game_over()
 
     def get_models(self):
-        import os
         files = [f for f in os.listdir('.') if os.path.isfile(f) and f.startswith("q_table_")]
         return files if files else ["No models found"]
 
@@ -222,9 +225,6 @@ def play_game(game_num, agent):
     return history, result, moves
 
 def train_bot(agent, num_games=1000):
-    import multiprocessing
-    import numpy as np
-
     wins = 0
     losses = 0
     draws = 0
@@ -300,13 +300,9 @@ def compare_bots(model1_file, model2_file, num_games=100):
     print(f"Draws: {draws} ({draws/num_games*100:.2f}%)")
 
 if __name__ == "__main__":
-    import argparse
-    import os
-    import re
-    import sys
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
-    parser.add_argument("--games", type=int, default=1000)
+    parser.add_argument("--games", type=int, default=100)
     parser.add_argument("--compare", nargs=2, help="Compare two models")
     args = parser.parse_args()
 
@@ -321,7 +317,6 @@ if __name__ == "__main__":
         agent.load_q_table(latest_file)
 
     if args.train:
-        import sys
         train_bot(agent, args.games)
         sys.exit()
     else:
