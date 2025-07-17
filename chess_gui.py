@@ -300,6 +300,7 @@ def compare_bots(model1_file, model2_file, num_games=100):
     print(f"Draws: {draws} ({draws/num_games*100:.2f}%)")
 
 if __name__ == "__main__":
+    import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true")
     parser.add_argument("--games", type=int, default=100)
